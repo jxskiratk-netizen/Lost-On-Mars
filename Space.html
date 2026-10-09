@@ -1,0 +1,651 @@
+
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Lost on Mars - My Place in Space</title>
+<style>
+
+html,body{margin:0;height:100%;background:#0b0618;overflow:hidden;user-select:none;touch-action:none;font-family:"Trebuchet MS","Segoe UI",Verdana,sans-serif}
+#game{position:absolute;left:50%;top:50%;width:480px;height:720px;overflow:hidden;background:#0b0618;transform:translate(-50%,-50%) scale(var(--s,1))}
+#game,#game *,#game ::after{box-sizing:border-box}
+#game>*{position:absolute}
+#c{left:0;top:0;width:480px;height:720px}
+
+#fearlabel{left:14px;top:30px;width:212px;display:flex;justify-content:space-between;font:bold 11px sans-serif;color:#ffe9d2}
+#fearbox{left:14px;top:28px;width:212px;height:16px;border-radius:10px;border:1.5px solid rgba(255,255,255,.4);background:rgba(15,5,25,.6)}
+#fearbar{position:absolute;left:2px;top:2px;height:10px;border-radius:6px;transition:width 1s,background 1s}
+#game.intro #fearlabel,#game.intro #fearbox,#game.intro .slot{display:none}
+#game.scared #fearbox{animation:shake .07s infinite alternate}
+.slot{top:14px;width:36px;height:36px;border-radius:50%;border:2px solid rgba(255,255,255,.3);background:rgba(10,5,25,.5)}
+.slot canvas{position:absolute;left:-2px;top:-2px;width:36px;height:36px;opacity:.25;transition:opacity .5s}
+.slot.on{border-color:#ffe48a}.slot.on canvas{opacity:1}
+.slot.pulse{animation:throb .5s 2}
+#mute{left:430px;top:14px;width:36px;height:36px;padding:0;border-radius:50%;border:1.5px solid rgba(255,255,255,.4);background:rgba(10,5,25,.5);font-size:16px;z-index:110;cursor:pointer}
+
+#bubble{display:none;width:max-content;max-width:230px;padding:8px 14px;border-radius:12px;border:2.5px solid #3a1d2e;background:#fffaf0;color:#2b1730;text-align:center;font:bold 15px/19px "Trebuchet MS",sans-serif;transform:translate(-50%,-100%);z-index:50}
+#bubble.show{display:block}
+#bubble.guide{background:#fff7d6;border-color:#2a8f86}
+#bubble::after{content:"";position:absolute;left:50%;bottom:-9px;width:12px;height:12px;background:inherit;border:inherit;border-width:0 2.5px 2.5px 0;transform:translateX(-50%) rotate(45deg)}
+#caption{left:24px;top:112px;width:432px;padding:12px 16px;border-radius:14px;border:2px solid #866e1d;background:rgba(20,8,35,.82);color:#fff;font:14px/18px sans-serif;opacity:0;transition:opacity .4s;z-index:60}
+#caption.show{opacity:1}
+#caption strong{display:block;margin-bottom:4px;font-size:16px;color:#ffe48a}
+#hint{left:50%;bottom:44px;transform:translateX(-50%);margin:0;padding:6px 18px;border-radius:17px;white-space:nowrap;background:rgba(20,8,35,.6);color:#fff3c8;font:bold 17px sans-serif;z-index:30}
+#hint:empty{display:none}
+#hint small{position:absolute;left:50%;top:40px;transform:translateX(-50%);font:12px sans-serif;color:#ffe9d2}
+#dim{inset:0;background:rgba(10,4,25,.45);opacity:0;transition:opacity .5s;pointer-events:none;z-index:80}
+#dim.on{opacity:1}
+#dim.on::after{content:"A gift from the kaitiaki";position:absolute;left:0;top:408px;width:100%;text-align:center;color:#fff;font:bold 14px sans-serif}
+#count{left:0;top:230px;width:100%;text-align:center;font:bold 100px/1 sans-serif;color:#fff3a8;-webkit-text-stroke:8px #5a1d1a;paint-order:stroke fill;pointer-events:none;z-index:70}
+.item{width:120px;height:120px;transform:translate(-50%,-50%) scale(var(--k,1));transition:left 1s,top 1s,transform 1s;z-index:90}
+.btn{border:3px solid #7a3b12;border-radius:32px;background:linear-gradient(#ffe08a,#f0a23c);color:#4a1d0c;font:bold 26px sans-serif;box-shadow:0 0 18px rgba(255,210,120,.7);animation:throb 1s infinite alternate;cursor:pointer}
+#prompt{display:none;left:110px;bottom:34px;width:260px;height:64px;font-size:22px;z-index:95}
+#prompt small{display:block;font:14px sans-serif}
+
+#title,#win{inset:0;z-index:100;text-align:center;color:#2d1f10}
+#title{background:linear-gradient(rgba(65, 29, 166, 0.55),transparent 300px)}
+#title *,#win *{position:absolute;margin:0}
+h1{left:0;width:100%;font:bold 55px sans-serif}
+#title h1{top:150px;color:transparent;background:linear-gradient(#fff3a8,#ff9a4a);background-clip:text;filter:drop-shadow(0 4px 0 #4a1218)}
+#title p{left:0;width:100%;text-shadow:0 2px 4px #28101a}
+#sub{top:212px;font:bold 16px sans-serif}#how{top:635px;font:bold 14px sans-serif;color:#fff3c8}
+#play{left:140px;top:548px;width:200px;height:60px}
+#win{display:none}#win.show{display:block}
+#win h1{top:236px;font-size:42px;color:#fff3a8;text-shadow:0 3px 0 #3a1020}
+#win .msg{left:0;top:290px;width:100%;font:15px sans-serif}
+#win .panel{left:24px;top:318px;width:432px;height:228px;border-radius:16px;border:1.5px solid rgba(255,228,138,.6);background:rgba(10,4,25,.55)}
+.row{left:0;width:100%;height:56px;text-align:left}
+.row canvas,.row .star{left:44px;top:6px;width:44px;height:44px}
+.row h3,.row p{left:104px;font-size:13px}.row h3{top:8px;font:bold 16px sans-serif;color:#ffe48a}.row p{top:30px;color:#fff}
+.star{background:#eaf4ff;clip-path:polygon(50% 0,62% 36%,98% 38%,69% 60%,80% 96%,50% 74%,20% 96%,31% 60%,2% 38%,38% 36%)}
+#win .credit{left:0;top:566px;width:100%;font:13px sans-serif;color:#e9dcff}
+#again{left:140px;top:646px;width:200px;height:54px;font-size:22px}
+@keyframes shake{from{transform:translate(1.5px,0)}to{transform:translate(-1.5px,1px)}}
+@keyframes throb{to{transform:scale(1.04)}}
+
+body {
+  margin: 0;
+  background: hwb(33 2% 23% / 0.361);
+}
+</style>
+</head>
+<body>
+<div id="game" class="intro">
+  <canvas id="c"></canvas>
+  <div id="fearlabel"><span>FEAR</span><span id="mood">So scared!</span></div>
+  <div id="fearbox"><div id="fearbar"></div></div>
+  <button id="mute">🔊</button>
+  <div id="bubble"></div><div id="caption"></div><div id="dim"></div><div id="count"></div>
+  <p id="hint"></p><button id="prompt" class="btn"></button>
+  <div id="title"><h1>Lost In Space</h1><p id="sub">My Place in Space</p>
+    <button id="play" class="btn">Play</button></div>
+  <div id="win"><h1>Home safe!</h1><p class="msg">The astronaut is not scared anymore. Kia kaha!</p><div class="panel" id="panel"></div>
+    <p class="credit">Inspired by Māori astronomy and culture. Learn more at Te Papa and Te Ara.</p><button id="again" class="btn">Play again</button></div>
+</div>
+
+<script>
+
+const $ = id => document.getElementById(id);
+const game = $('game'), cv = $('c'); let ctx = cv.getContext('2d');  
+cv.width = 960; cv.height = 1440;                                   
+const W = 800, H = 720, HORIZON = 100, PATH_HALF = 98, TAU = Math.PI * 2, { sin, cos, hypot } = Math;
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v)), lerp = (a, b, t) => a + (b - a) * t;
+const smooth = t => t * t * (3 - 2 * t), rand = (a, b) => a + Math.random() * (b - a);
+const wait = secs => new Promise(done => setTimeout(done, secs * 1000));
+const KORU_Y = 3230, SITE_Y = 1380, SHIP_X = 108, SHIP_Y = 4335;
+let camY = 0, state = 'title', titleT = 0, winT = 0, parts = [], waits = [], skipNow = null, pointer = null;
+const keys = {};
+const g = { t: 0, px: 240, py: 4150, vx: 0, vy: 0, face: 1, wp: 0, walk: 0, prevSin: 0, dustT: 0,
+  fear: 100, fearTarget: 100, brave: 0, hasKoru: false, hasPou: false, stage: 0, minY: KORU_Y, maxY: 4235,
+  frozen: true, auto: null, noClamp: false, scene: false, talking: false,
+  spook: 0, spookT: 9, squeakT: 5, squeak: 0, jumpT: 0, shake: 0, meteor: null,
+  guide: { x: 330, y: 0, tx: 330, ty: 0, mode: 'hidden', a: 0 }, ring: null, ping: false, north: 0, matFocus: 0,
+  jewelFloat: false, showMoon: false, moonF: .12, entering: false, enterT: 0, inShip: false, liftoff: false,
+  ship: { y: SHIP_Y, tilt: -.14, doorOpen: 0, doorTarget: 0, slot: 0, socket: 0, flame: 0, vy: 0, alt: 0, smokeT: 0 } };
+const ITEMS = { koru: ['Koru (bone pendant)', 'A koru is a spiral ornament that represents new life, growth and hope helping the scared astronaut to believe in himself.', 0],
+  pounamu: ['Pounamu (greenstone)', 'A greenstone that represents spiritual connection and strength helping the scared astronaut to overcome his fear.', 1],
+  jewel: ['Moon jewel (story taonga)', "Maramataka, turning of moons symbolises a new chapter in  is the Māori lunar calendar. It follows the moon's phases.", 2] };
+const QUIPS = [ 
+  [4020, 's', "That rock has eyes. ROCKS DON'T HAVE EYES."], [3820, 's', 'Mars is very red. And very... empty.'], [3600, 's', 'Someone is watching me. I can feel it.'],
+  [3420, 's', 'I only pressed the DO NOT button once.'], [3300, 's', 'Oh God'], [2900, 'b', 'Brave mode: ON'],
+  [2600, 'b', 'Hey rocks. Sorry I screamed earlier.'], [2300, 'b', 'Walking is my superpower. Left, right, repeat.'], [2000, 'b', 'No footprints here. Just mine.'],
+  [1700, 'b', 'North side, here I come!'], [1750, 'r', "Heading home."], [2300, 'r', 'Ngā mihi, rocks. You were great.'],
+  [2900, 'r', "I wave at a rock. ...Rocks don't wave back."], [3950, 'r', 'I see the ship! It looks so tiny and crashed.']];
+const quipsDone = new Set();
+
+
+const pathX = y => 240 + smooth(clamp((4250 - y) / 350, 0, 1)) * smooth(clamp((y - 1330) / 320, 0, 1)) * 64 * (sin(y / 230) + .35 * sin(y / 87 + 1));
+const depth = sy => clamp(.5 + .5 * (sy - HORIZON) / (520 - HORIZON), .35, 1.3);   // things lower on screen look bigger
+const proj = (wx, wy) => { const s = depth(wy - camY); return { x: 240 + (wx - 240) * s, y: wy - camY, s }; };   
+const seeded = a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const R = seeded(11), decor = [], grains = [], stars = [];
+for (let i = 0; i < 110; i++) stars.push({ x: R() * W, y: R() * (HORIZON - 8), r: R() * 1.3 + .3, p: R() * TAU, sp: 1 + R() * 2 });
+for (let i = 0; i < 1700; i++) grains.push({ x: R() * W, y: 600 + R() * 3950, s: 1 + R() * 2.2, light: R() < .5 });
+for (let y = 620; y < 4520; y += R() * 22 + 10) {
+  const x = pathX(y) + (R() < .5 ? -1 : 1) * (PATH_HALF + 24 + Math.pow(R(), 1.3) * 220), r = R(); if (x < -30 || x > 510) continue;
+  decor.push(r < .42 ? { type: 'rock', x, y, s: 6 + R() * 18, v: R() } : r < .7 ? { type: 'crater', x, y, s: 12 + R() * 34, v: R() } : { type: 'pebbles', x, y, s: 4 + R() * 6, v: R() });
+}
+[[4060, -1], [3900, 1], [3500, -1], [2600, -1], [1800, 1], [3000, 1], [2200, -1]].forEach(([y, side]) => decor.push({ type: 'rock', x: pathX(y) + side * (PATH_HALF + 17), y, s: 21, v: R(), eyes: true }));
+decor.sort((a, b) => a.y - b.y);
+const critters = [[3950, 1], [3700, -1], [2750, 1], [2150, -1], [1850, 1]].map(([y, side]) => ({ y, x: pathX(y) + side * (PATH_HALF + 32), peek: 0, said: false }));
+
+
+let ac, master, muted = false, mood = 'scared', beat = 0;
+function startAudio() {  
+  if (ac) return ac.resume();
+  ac = new (window.AudioContext || window.webkitAudioContext)();
+  master = ac.createGain(); master.connect(ac.destination); setInterval(playMusic, 450);
+}
+function tone(freq, secs, wave = 'sine', vol = .1, delay = 0, slideTo = 0) {   
+  if (!ac) return;
+  const t = ac.currentTime + delay, osc = ac.createOscillator(), loud = ac.createGain();
+  osc.type = wave; osc.frequency.setValueAtTime(freq, t);
+  if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t + secs);
+  loud.gain.setValueAtTime(.0001, t); loud.gain.exponentialRampToValueAtTime(Math.max(.001, vol), t + .02); loud.gain.exponentialRampToValueAtTime(.0001, t + secs);
+  osc.connect(loud); loud.connect(master); osc.start(t); osc.stop(t + secs + .1);
+}
+function whoosh(secs, vol, from, to) {   
+  if (!ac) return;
+  const n = ac.sampleRate * secs, buf = ac.createBuffer(1, n, ac.sampleRate), data = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) data[i] = Math.random() * 2 - 1;
+  const src = ac.createBufferSource(), filter = ac.createBiquadFilter(), loud = ac.createGain(), t = ac.currentTime;
+  filter.type = 'bandpass'; filter.frequency.setValueAtTime(from, t); filter.frequency.exponentialRampToValueAtTime(to, t + secs);
+  loud.gain.setValueAtTime(vol, t); loud.gain.exponentialRampToValueAtTime(.0001, t + secs);
+  src.buffer = buf; src.connect(filter); filter.connect(loud); loud.connect(master); src.start();
+}
+const SCALE = [220, 262, 294, 330, 392, 440], MELODY = [262, 330, 392, 440, 392, 330, 349, 294];
+function playMusic() {   
+  if (!ac || ac.state !== 'running') return; beat++;
+  if (mood === 'scared') {
+    if (beat % 3 === 0) tone(SCALE[Math.floor(Math.random() * 6)], 1.4, 'triangle', .1);
+    if (beat % 2 === 0 && !g.hasKoru && g.fear > 20) { tone(62, .15, 'sine', .3 * g.fear / 100, 0, 38); tone(58, .12, 'sine', .2 * g.fear / 100, .2, 36); }
+  } else {
+    tone(MELODY[beat % 8] * (mood === 'win' ? 2 : 1), .4, 'triangle', .1);
+    if (beat % 8 === 0) tone(130, 1.5, 'sine', .14);
+  }
+}
+const sfx = {
+  squeak() { tone(1500, .09, 'sine', .13, 0, 2400); tone(2300, .08, 'sine', .11, .09, 1500); },
+  step() { tone(520, .04, 'square', .025, 0, 380); }, stepB() { tone(130, .09, 'sine', .14, 0, 70); },
+  blip(who) { who === 'astro' ? tone(520 + rand(0, 240), .06, 'square', .03) : tone(900 + rand(0, 120), .18, 'sine', .05); },
+  gift() { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 1.2, 'sine', .12, i * .11)); },
+  transform() { sfx.gift(); [392, 523, 659, 784, 1047, 1568].forEach((f, i) => tone(f, 1.2, 'sine', .07, .6 + i * .08)); },
+  tink() { tone(1318, 1.2, 'sine', .12); tone(1760, 1, 'sine', .09, .05); }, ping() { tone(1760, 1.2, 'sine', .07); },
+  pip() { tone(900, .07, 'triangle', .08, 0, 1400); }, thanks() { tone(659, .25, 'sine', .12); tone(880, .4, 'sine', .12, .12); },
+  guide() { [784, 988, 1175, 1568].forEach((f, i) => tone(f, .8, 'sine', .07, i * .09)); },
+  click() { tone(500, .08, 'square', .06); tone(750, .1, 'square', .05, .07); }, braveStep() { tone(98, .5, 'sine', .25, 0, 55); tone(392, .4, 'triangle', .08, .05); },
+  spook() { whoosh(.7, .2, 2500, 400); sfx.squeak(); }, door() { whoosh(.7, .16, 1500, 300); tone(100, .25, 'sine', .16, .6, 55); },
+  unlock() { tone(900, .05, 'square', .1); tone(1400, .06, 'square', .08, .07); whoosh(.9, .18, 300, 1800); tone(120, .3, 'sine', .2, 1, 60); },
+  beep(go) { go ? tone(990, .5, 'square', .09) : tone(660, .15, 'square', .07); },
+  launch() { whoosh(4.8, .5, 200, 5000); tone(55, 5, 'sawtooth', .14, 0, 420); },
+  win() { [523, 659, 784, 1047, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, 1.3, 'sine', .12, i * .16)); } };
+
+
+const circle = (x, y, r, color) => { if (color) ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill(); };
+const oval = (x, y, rx, ry, color) => { ctx.fillStyle = color; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, TAU); ctx.fill(); };
+const roundBox = (x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); };
+const outline = (color, width) => { ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke(); };
+const gradient = (x0, y0, x1, y1, ...stops) => { const gr = ctx.createLinearGradient(x0, y0, x1, y1); for (let i = 0; i < stops.length; i += 2) gr.addColorStop(stops[i], stops[i + 1]); return gr; };
+function polygon(color, points) { ctx.fillStyle = color; ctx.beginPath(); points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.fill(); }
+function starPath(outer, inner, points) {
+  ctx.beginPath();
+  for (let i = 0; i < points * 2; i++) { const a = i * Math.PI / points - Math.PI / 2, r = i % 2 ? inner : outer; i ? ctx.lineTo(cos(a) * r, sin(a) * r) : ctx.moveTo(cos(a) * r, sin(a) * r); }
+  ctx.closePath();
+}
+function glow(r, inner, outer, amount) { 
+  const mode = ctx.globalCompositeOperation, alpha = ctx.globalAlpha, gr = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+  gr.addColorStop(0, inner); gr.addColorStop(1, outer); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = alpha * amount;
+  circle(0, 0, r, gr); ctx.globalCompositeOperation = mode; ctx.globalAlpha = alpha;
+}
+function label(text, x, y, font, color) { ctx.font = font; ctx.textAlign = 'center'; ctx.fillStyle = color; ctx.fillText(text, x, y); }
+
+
+function drawKoru(r, glowAmount) {
+  ctx.save(); if (glowAmount) glow(r * 2.2, 'rgba(255,240,200,.7)', 'rgba(255,240,200,0)', glowAmount);
+  ctx.lineCap = ctx.lineJoin = 'round';
+  const radius = r * .55, turns = 1.55 * TAU; ctx.translate(0, -radius * .55);
+  const spiral = () => {   // a stem that curls inward in a spiral
+    ctx.beginPath(); ctx.moveTo(radius * .55, radius * 2.1); ctx.quadraticCurveTo(radius * 1.15, radius * 1.1, radius, 0);
+    for (let a = .1; a <= turns; a += .12) { const rho = radius * (1 - a / (turns * 1.12)); ctx.lineTo(cos(a) * rho, -sin(a) * rho); }
+  };
+  spiral(); outline('#a8946c', r * .36); spiral(); outline('#f6edd6', r * .24);
+  const end = radius * (1 - 1 / 1.12); circle(cos(turns) * end, -sin(turns) * end, r * .15, '#f6edd6'); outline('#a8946c', r * .06); ctx.restore();
+}
+function pounamuShape(r) {
+  ctx.beginPath(); ctx.moveTo(-r * .5, -r); ctx.quadraticCurveTo(0, -r * 1.12, r * .5, -r); ctx.lineTo(r * .88, r * .85);
+  ctx.quadraticCurveTo(r * .9, r * 1.05, r * .65, r * 1.05); ctx.lineTo(-r * .65, r * 1.05); ctx.quadraticCurveTo(-r * .9, r * 1.05, -r * .88, r * .85); ctx.closePath();
+}
+function drawPounamu(r, glowAmount) {
+  ctx.save(); if (glowAmount) glow(r * 2.2, 'rgba(120,255,190,.6)', 'rgba(120,255,190,0)', glowAmount);
+  pounamuShape(r); ctx.fillStyle = gradient(-r, -r, r, r, 0, '#8cf0be', .5, '#1f9c6e', 1, '#0c5a44'); ctx.fill(); outline('#0a4a38', Math.max(1, r * .07));
+  ctx.beginPath(); ctx.moveTo(-r * .32, -r * .7); ctx.quadraticCurveTo(-r * .5, 0, -r * .55, r * .6); ctx.lineCap = 'round'; outline('rgba(255,255,255,.5)', Math.max(1, r * .1)); ctx.restore();
+}
+function drawMoonDisc(r, lit) {   
+  ctx.save(); circle(0, 0, r, 'rgba(30,36,80,.9)');
+  if (lit >= .02) {
+    const a = Math.max(.01, r * Math.abs(1 - 2 * lit)); ctx.beginPath(); ctx.arc(0, 0, r, -Math.PI / 2, Math.PI / 2, false);
+    lit < .5 ? ctx.ellipse(0, 0, a, r, 0, Math.PI / 2, -Math.PI / 2, true) : ctx.ellipse(0, 0, a, r, 0, Math.PI / 2, Math.PI * 1.5, false);
+    ctx.closePath(); ctx.fillStyle = '#fdf6d0'; ctx.fill(); ctx.clip(); ctx.fillStyle = 'rgba(190,170,120,.35)';
+    [[.25, -.3, .16], [.45, .25, .12], [-.2, .35, .1], [-.4, -.2, .1]].forEach(c => circle(c[0] * r, c[1] * r, c[2] * r));
+  }
+  ctx.restore();
+}
+function drawMoonJewel(r, lit, glowAmount) {
+  ctx.save(); if (glowAmount) glow(r * 2.8, 'rgba(255,248,200,.65)', 'rgba(255,248,200,0)', glowAmount * (.6 + .4 * lit));
+  ctx.beginPath(); ctx.arc(0, -r * 1.2, r * .2, 0, TAU); outline('#d7dbe6', Math.max(1, r * .1));
+  circle(0, 0, r, gradient(-r, -r, r, r, 0, '#f5f7ff', 1, '#8e97b5')); drawMoonDisc(r * .8, lit); ctx.restore();
+}
+function drawItem(kind, r, glowAmount) { kind === 'koru' ? drawKoru(r, glowAmount) : kind === 'pounamu' ? drawPounamu(r, glowAmount) : drawMoonJewel(r, .6, glowAmount); }
+function itemCanvas(kind, size, r, glowAmount) {   // a little canvas holding one item, for the HUD, gifts and win screen
+  const c = document.createElement('canvas'), main = ctx; c.width = c.height = size * 2;
+  ctx = c.getContext('2d'); ctx.scale(2, 2); ctx.translate(size / 2, size / 2); drawItem(kind, r, glowAmount); ctx = main; return c;
+}
+
+
+function drawAstro(x, y, s, o) {   
+  const brave = o.brave, scared = (1 - brave) * o.fear, t = o.t, step = sin(o.wp);
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.globalAlpha = o.alpha; oval(0, 1, 24, 7, 'rgba(50,12,10,.32)');
+  ctx.translate(scared > .05 ? (sin(t * 47) * 1.6 + sin(t * 29)) * scared : 0, -(o.jump || 0) - Math.abs(cos(o.wp)) * lerp(1.2, 3, brave) * o.walk);   // trembling + walking bounce
+  const lean = clamp(o.vx / 150, -1, 1) * 3, legH = lerp(14, 23, brave), torsoH = lerp(24, 30, brave), helmR = lerp(16.5, 18.5, brave);
+  const hunch = (1 - brave) * 4, torsoTop = -legH - torsoH + hunch * .4, blink = sin(t * (brave > .5 ? 2 : 9)) > 0;
+  ctx.lineCap = ctx.lineJoin = 'round';
+  for (const d of [-1, 1]) {  
+    const lift = Math.max(0, d * step) * lerp(4, 7, brave) * o.walk, footX = d * lerp(11, 8, brave);
+    ctx.beginPath(); ctx.moveTo(d * 7, -legH); ctx.lineTo(d * lerp(15, 9, brave), -legH * .5 - lift * .5); ctx.lineTo(footX, -lift - 3); outline('#e9e5de', 10);
+    oval(footX + d * 1.5, -lift - 2, 8, 5, '#4a4f63');
+  }
+  ctx.fillStyle = gradient(-17, 0, 17, 0, 0, '#d8d3cb', .4, '#fbf9f4', 1, '#cfc9c0'); roundBox(-17 + lean * .4, torsoTop, 34, torsoH + 3, 10); ctx.fill(); outline('#a9a39a', 1.2);
+  const panelY = torsoTop + torsoH * .62; ctx.fillStyle = '#39405a'; roundBox(-9 + lean * .4, panelY, 18, 8, 3); ctx.fill();
+  circle(-4 + lean * .4, panelY + 4, 1.8, brave > .5 ? '#5dffb0' : blink ? '#ff5a5a' : '#7a2a2a'); circle(2 + lean * .4, panelY + 4, 1.6, '#ffd35a');
+  if (brave > .35) {   // koru necklace appears once brave
+    ctx.save(); ctx.globalAlpha *= brave; ctx.beginPath(); ctx.moveTo(-7 + lean * .4, torsoTop - 1); ctx.lineTo(lean * .4, torsoTop + 9); ctx.lineTo(7 + lean * .4, torsoTop - 1);
+    outline('#6b4a2e', 1.4); ctx.translate(lean * .4, torsoTop + 13); drawKoru(5.5, .6 + .3 * sin(t * 3)); ctx.restore();
+  }
+  const shoulderY = torsoTop + 8;
+  for (const d of [-1, 1]) {  
+    const shake = sin(t * 38 + d) * 1.8 * o.fear, handX = lerp(d * 9 + shake, d * 22, brave), handY = lerp(shoulderY - 2 + shake * .6, shoulderY + 24 - d * step * o.walk * 5, brave);
+    ctx.beginPath(); ctx.moveTo(d * 16 + lean * .4, shoulderY); ctx.lineTo(lerp(d * 25, d * 24, brave), lerp(shoulderY + 9, shoulderY + 12, brave)); ctx.lineTo(handX, handY); outline('#f4f1ea', 8.5); circle(handX, handY, 5, '#f19a45');
+  }
+  ctx.save(); ctx.translate(lean * .8 + hunch * .2, torsoTop - helmR * .55 + hunch * .6);   // helmet
+  circle(0, 0, helmR, gradient(-helmR, -helmR, helmR, helmR, 0, '#fff', 1, '#d6d1c8')); outline('#a9a39a', 1.4);
+  oval(0, 1, helmR * .8, helmR * .64, gradient(0, -helmR * .6, 0, helmR * .6, 0, '#3b4f9a', 1, '#141c45'));
+  ctx.beginPath(); ctx.arc(0, 1, helmR * .62, Math.PI * 1.1, Math.PI * 1.45); outline('rgba(255,255,255,.5)', 2);
+  const eyeX = helmR * .34, eyeR = lerp(4.6, 3.4, brave), lid = (t % 3.2) < .12 ? .15 : 1, look = sin(t * 50) * .8 * scared + (o.face || 1) * .6 * brave;
+  for (const d of [-1, 1]) {
+    oval(d * eyeX, 0, eyeR, eyeR * lid, '#fff'); if (lid > .5) circle(d * eyeX + look, .3, lerp(1.5, 2.2, brave), '#10132b');
+    ctx.beginPath(); ctx.moveTo(d * (eyeX + 4.5), -eyeR - lerp(3, 5.5, brave)); ctx.lineTo(d * (eyeX - 3), -eyeR - lerp(6, 3.2, brave)); outline('#e9e5ff', 1.8);   
+  }
+  if (brave < .5) oval(0, helmR * .42, 2.4 + (o.squeak > 0 ? 1 : 0), (o.squeak > 0 ? 3.6 : 2) + sin(t * 30) * .5 * scared, '#0b0e25');   
+  else { ctx.beginPath(); ctx.arc(0, helmR * .12, 5.5, .15 * Math.PI, .85 * Math.PI); outline('#fff', 1.8); for (const d of [-1, 1]) circle(d * (eyeX + 3.5), helmR * .28, 2.6, 'rgba(255,140,170,' + .4 * brave + ')'); }   // smile + blush
+  if (scared > .3) { const drop = (t * 14) % 12; ctx.globalAlpha *= .9 * (1 - drop / 14); circle(helmR * .98, -helmR * .35 + drop, 2.3, 'rgba(130,210,255,.95)'); }   // sweat
+  ctx.restore(); ctx.restore();
+}
+function drawGuide(x, y, alpha, t) {
+  ctx.save(); ctx.translate(x, y); ctx.globalAlpha = alpha; glow(78, 'rgba(255,230,150,.7)', 'rgba(255,230,150,0)', .8 + .2 * sin(t * 3)); glow(46, 'rgba(110,240,215,.35)', 'rgba(110,240,215,0)', 1);
+  ctx.rotate(sin(t * 1.5) * .12); ctx.fillStyle = gradient(0, -28, 0, 22, 0, '#fffbe0', 1, '#ffd45e'); ctx.lineJoin = 'round'; starPath(27, 13, 5); outline('#ffdc7a', 8); ctx.fill();
+  oval(-6, -2, 2.1, 2.6, '#3b2a1a'); oval(6, -2, 2.1, 2.6, '#3b2a1a'); ctx.beginPath(); ctx.arc(0, 2, 5, .2 * Math.PI, .8 * Math.PI); ctx.lineCap = 'round'; outline('#3b2a1a', 1.8);
+  circle(-11, 3, 2.6, 'rgba(255,150,120,.5)'); circle(11, 3, 2.6); ctx.restore();
+}
+function drawShip(sx, sy, s, sh, t, crewInside) {
+  ctx.save(); ctx.translate(sx, sy); ctx.scale(s, s); oval(0, 2, 56, 11, 'rgba(40,10,10,.3)'); ctx.rotate(sh.tilt);
+  if (sh.flame > .01) {   // rocket flame
+    const len = (36 + Math.random() * 26) * sh.flame * 1.6; ctx.fillStyle = gradient(0, 0, 0, len, 0, '#fff6b0', .4, '#ffb347', 1, 'rgba(255,90,40,0)');
+    ctx.beginPath(); ctx.moveTo(-10, -6); ctx.quadraticCurveTo(-13, len * .4, 0, len); ctx.quadraticCurveTo(13, len * .4, 10, -6); ctx.fill();
+  }
+  polygon('#d24a3c', [[-32, -34], [-60, -2], [-32, -6]]); polygon('#b53d31', [[32, -34], [52, -12], [47, 0], [32, -6]]);   // fins
+  ctx.fillStyle = gradient(-34, 0, 34, 0, 0, '#cfc8c0', .35, '#fbf8f2', 1, '#bdb6ae'); roundBox(-34, -120, 68, 114, 16); ctx.fill(); outline('#9a948c', 2);
+  ctx.fillStyle = '#d9463a'; ctx.beginPath(); ctx.moveTo(-34, -100); ctx.quadraticCurveTo(-30, -150, 2, -160); ctx.quadraticCurveTo(30, -150, 34, -100); ctx.closePath(); ctx.fill(); ctx.fillRect(-33, -72, 66, 6);
+  circle(0, -96, 15, '#8a8f9a'); circle(0, -96, 12, gradient(0, -108, 0, -84, 0, '#6fc7ff', 1, '#1b4f8f'));   // window
+  if (crewInside) { circle(0, -94, 8, '#fbf9f4'); oval(0, -93, 6, 5, '#16205a'); circle(-2.4, -93.5, 1.4, '#fff'); circle(2.4, -93.5, 1.4); circle(9 + sin(t * 8) * 2, -100 + sin(t * 8), 2.6, '#f19a45'); }
+  const open = sh.doorOpen, panelW = 30 * (1 - open); ctx.save(); roundBox(-15, -60, 30, 52, 5); ctx.clip();   // door
+  ctx.fillStyle = open > .02 ? gradient(0, -60, 0, -8, 0, '#ffe3a8', 1, '#ff9f4a') : '#9aa0ae'; ctx.fillRect(-15, -60, 30, 52);
+  if (panelW > .5) { ctx.fillStyle = '#b3b9c7'; ctx.fillRect(15 - panelW, -60, panelW, 52); ctx.strokeStyle = '#6b7280'; ctx.lineWidth = 2; ctx.strokeRect(16 - panelW, -59, panelW - 2, 50); }
+  ctx.restore(); roundBox(-15, -60, 30, 52, 5); outline('#6b7280', 2);
+  if (open < .3) {   
+    ctx.save(); ctx.translate(0, -34); ctx.globalAlpha = 1 - open / .3; pounamuShape(8.5);
+    if (sh.slot > .5) { ctx.fillStyle = '#4ee2a0'; ctx.fill(); glow(26, 'rgba(100,255,190,.8)', 'rgba(100,255,190,0)', 1); }
+    else { ctx.fillStyle = '#262a36'; ctx.fill(); outline('rgba(120,255,200,' + (.35 + .35 * sin(t * 4)) + ')', 1.6); } ctx.restore();
+  }
+  ctx.save(); ctx.translate(22, -84); circle(0, 0, 7, '#4a4f63'); if (sh.socket > .5) drawMoonJewel(5.2, g.showMoon ? g.moonF : .6, 1); ctx.restore(); ctx.restore();   // jewel socket
+}
+
+
+function drawMatariki(cx, cy, scale, alpha, t, showName) {
+  ctx.save(); ctx.translate(cx, cy); ctx.scale(scale, scale);
+  [[0, 0, 2.4], [14, -6, 1.8], [24, 3, 2.2], [8, 10, 1.6], [-12, 8, 2], [-20, -4, 1.7], [-6, -14, 1.9], [30, -12, 1.5], [16, 18, 1.6]].forEach((p, i) => {
+    ctx.save(); ctx.translate(p[0], p[1]); ctx.globalAlpha = alpha * (.65 + .35 * sin(t * 2 + i * 1.7)); glow(p[2] * 5, 'rgba(190,225,255,.8)', 'rgba(190,225,255,0)', 1); circle(0, 0, p[2], '#eaf4ff'); ctx.restore();
+  });
+  if (showName) { ctx.globalAlpha = alpha; label('Matariki', 6, 38, 'bold 12px sans-serif', '#d9ecff'); } ctx.restore();
+}
+function drawSky(t) {
+  ctx.fillStyle = gradient(0, 0, 0, HORIZON + 4, 0, '#07041a', .55, '#2a0f3a', .85, '#7a2a3c', 1, '#d9683f'); ctx.fillRect(-20, 0, W + 40, HORIZON + 4);
+  for (const s of stars) { ctx.globalAlpha = (.35 + .65 * Math.abs(sin(t * s.sp + s.p))) * (1 - s.y / (HORIZON * 1.3)); ctx.fillStyle = '#fff'; ctx.fillRect(s.x, s.y, s.r * 1.4, s.r * 1.4); } ctx.globalAlpha = 1;
+  ctx.save(); ctx.translate(92, 52); glow(16, 'rgba(120,180,255,.5)', 'rgba(120,180,255,0)', 1); circle(0, 0, 5.5, '#3b7fd8'); circle(-1.5, -1, 2.2, '#5bbf6e'); ctx.restore();   // Earth
+  const seen = state === 'title' ? .5 : g.north; if (seen > .02) drawMatariki(338, 40, 1 + g.matFocus * .35, clamp(seen + g.matFocus * .5, 0, 1), t, g.matFocus > 0);
+  if (g.ping && g.guide.mode === 'hidden') { const pulse = .7 + .3 * sin(t * 4); ctx.save(); ctx.translate(240, 30); glow(26, 'rgba(255,240,170,.9)', 'rgba(255,240,170,0)', pulse); ctx.fillStyle = '#fff6c8'; starPath(9 * pulse, 2.2, 4); ctx.fill(); ctx.restore(); }
+  if (g.meteor) { const m = g.meteor; ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(m.x + 80, m.y - 17); outline(gradient(m.x, m.y, m.x + 80, m.y - 17, 0, 'rgba(255,255,255,.95)', 1, 'rgba(255,255,255,0)'), 2.5); }
+  ctx.fillStyle = '#4b1a2c'; ctx.beginPath(); ctx.moveTo(-20, HORIZON + 2);   // distant hills
+  for (let x = -20; x <= W + 20; x += 20) ctx.lineTo(x, HORIZON - 6 - 5 * sin(x * .03) - 4 * sin(x * .011 + 2)); ctx.lineTo(W + 20, HORIZON + 2); ctx.closePath(); ctx.fill();
+}
+function drawGround(t) {
+  ctx.fillStyle = gradient(0, HORIZON, 0, H, 0, '#e48a58', .25, '#d2653a', .7, '#b04a26', 1, '#963c1f'); ctx.fillRect(-20, HORIZON - 2, W + 40, H - HORIZON + 4);
+  for (const gr of grains) { if (gr.y < camY + HORIZON || gr.y > camY + H) continue; const p = proj(gr.x, gr.y); ctx.fillStyle = gr.light ? 'rgba(255,205,150,.22)' : 'rgba(110,35,20,.25)'; ctx.fillRect(p.x, p.y, gr.s * p.s * 1.6, gr.s * p.s * .8); }
+  const rows = []; for (let sy = HORIZON - 2; sy <= H + 12; sy += 10) { const s = depth(sy); rows.push({ c: 240 + (pathX(camY + sy) - 240) * s, sy, half: PATH_HALF * s, s }); }   // path, one slice every 10px
+  [[14, '#b8643b'], [6, '#d68a58'], [0, '#ecbf90']].forEach(([extra, color]) => {   // edge, soft edge, sand
+    ctx.fillStyle = color; ctx.beginPath(); rows.forEach((p, i) => { const x = p.c - p.half - extra * p.s; i ? ctx.lineTo(x, p.sy) : ctx.moveTo(x, p.sy); });
+    for (let i = rows.length - 1; i >= 0; i--) ctx.lineTo(rows[i].c + rows[i].half + extra * rows[i].s, rows[i].sy); ctx.closePath(); ctx.fill();
+  });
+  ctx.setLineDash([14, 22]); ctx.beginPath(); rows.forEach((p, i) => i ? ctx.lineTo(p.c, p.sy) : ctx.moveTo(p.c, p.sy)); outline('rgba(255,240,215,.18)', 3); ctx.setLineDash([]);
+  const site = proj(240, SITE_Y);   // glowing clearing in the far north
+  if (site.y > HORIZON - 120 && site.y < H + 120) {
+    const rx = 175 * site.s; ctx.save(); ctx.translate(site.x, site.y); ctx.scale(1, .38); glow(rx, 'rgba(160,255,235,.5)', 'rgba(120,220,200,0)', 1);
+    ctx.beginPath(); ctx.arc(0, 0, rx * .78, 0, TAU); outline('rgba(190,255,240,.45)', 3);
+    for (let i = 0; i < 14; i++) { const a = i / 14 * TAU; circle(cos(a) * rx * .78, sin(a) * rx * .78, 4 * site.s, 'rgba(235,255,250,' + (.35 + .5 * (.5 + .5 * sin(t * 2 + i * 1.3))) + ')'); } ctx.restore();
+  }
+  if (g.ring) {   // the "take a brave step" ring
+    const p = proj(g.ring.x, g.ring.y), bounce = -Math.abs(sin(t * 4)) * 8; ctx.save(); ctx.translate(p.x, p.y); ctx.save(); ctx.scale(1, .4); glow(60 * p.s, 'rgba(255,230,140,.7)', 'rgba(255,230,140,0)', 1);
+    ctx.beginPath(); ctx.arc(0, 0, 34 * p.s * (1 + sin(t * 5) * .08), 0, TAU); outline('#ffe48a', 4); ctx.restore();
+    polygon('#fff3b8', [[0, -36], [11, -20], [4, -20], [4, -8], [-4, -8], [-4, -20], [-11, -20]].map(q => [q[0], bounce + q[1]])); outline('#8a5a12', 2); ctx.restore();
+  }
+}
+function drawDecor(d) {
+  const p = proj(d.x, d.y); if (p.x < -70 || p.x > W + 70) return; ctx.save(); ctx.translate(p.x, p.y); ctx.scale(p.s, p.s); const r = d.s;
+  const lumpy = () => { ctx.beginPath(); for (let i = 0; i < 7; i++) { const a = i * TAU / 7, q = r * (.85 + .3 * sin(i * 2.1 + d.v * 9)), x = cos(a) * q, y = sin(a) * q * .8 - r * .35; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.closePath(); };
+  if (d.type === 'rock') {
+    oval(r * .2, r * .5, r * 1.15, r * .36, 'rgba(60,15,10,.3)'); lumpy(); ctx.fillStyle = '#8d3b25'; ctx.fill(); outline('rgba(50,10,8,.5)', 1.5);
+    ctx.save(); ctx.translate(-r * .18, -r * .3); ctx.scale(.65, .6); lumpy(); ctx.fillStyle = '#b55c37'; ctx.fill(); ctx.restore();
+    if (d.eyes && g.fear > 45) {   // spooky rocks blink and watch you while you're scared
+      const lid = sin(g.t * 1.7 + d.v * 20) > .93 ? .15 : 1, look = clamp((g.px - d.x) / 120, -1, 1) * 1.6;
+      for (const side of [-1, 1]) { oval(side * r * .3, -r * .5, r * .22, r * .22 * lid, '#fff'); circle(side * r * .3 + look, -r * .48, r * .09, '#10132b'); }
+    }
+  } else if (d.type === 'crater') { oval(0, 0, r, r * .45, '#b44a2a'); oval(0, r * .04, r * .8, r * .34, '#8e3822'); ctx.beginPath(); ctx.ellipse(0, 0, r, r * .45, 0, Math.PI * 1.05, Math.PI * 1.95); outline('#eba06a', 2); }
+  else { oval(0, 0, r * .8, r * .45, '#9a4428'); oval(r * 1.1, r * .3, r * .55, r * .32, '#9a4428'); oval(-r * .9, r * .4, r * .4, r * .25, '#9a4428'); }
+  ctx.restore();
+}
+function drawCritter(c) {
+  const p = proj(c.x, c.y); if (p.x < -50 || p.x > W + 50) return; ctx.save(); ctx.translate(p.x, p.y); ctx.scale(p.s, p.s); oval(0, 0, 20, 9, '#7a3220'); oval(0, 1, 16, 6.5, '#4b1a12');
+  if (c.peek > .02) {   // a little blob peeks out of its crater
+    const y = 4 - c.peek * 15, look = clamp((g.px - c.x) / 80, -1, 1) * 1.2; circle(0, y, 9, '#58d6c0'); ctx.beginPath(); ctx.moveTo(0, y - 8); ctx.lineTo(3, y - 15); outline('#58d6c0', 1.6); circle(3, y - 16, 2, '#ffe48a');
+    for (const side of [-1, 1]) { circle(side * 3.6, y - 1, 2.7, '#fff'); circle(side * 3.6 + look, y - .5, 1.2, '#10132b'); }
+  }
+  ctx.fillStyle = '#c4573a'; ctx.beginPath(); ctx.ellipse(0, 0, 20, 9, 0, .05 * Math.PI, .95 * Math.PI); ctx.fill(); ctx.restore();
+}
+function playerScreen() { return proj(g.px, g.py); }
+function drawAstroNow(scale) {
+  const p = playerScreen();
+  drawAstro(p.x, p.y, p.s * scale, { brave: g.brave, fear: clamp(g.fear / 100, 0, 1), t: g.t, walk: g.walk, wp: g.wp, face: g.face, vx: g.vx, alpha: 1 - g.enterT,
+    jump: g.jumpT > 0 ? sin((1 - g.jumpT / .45) * Math.PI) * 16 : 0, squeak: g.squeak });
+}
+function drawObjects() {   // everything is sorted by world y, so things lower on screen overlap things behind them
+  const list = [], top = camY + HORIZON - 70, bottom = camY + H + 130;
+  for (const d of decor) if (d.y > top && d.y < bottom) list.push({ y: d.y, draw: () => drawDecor(d) });
+  for (const c of critters) if (c.y > top && c.y < bottom) list.push({ y: c.y, draw: () => drawCritter(c) });
+  if (!g.liftoff) list.push({ y: SHIP_Y, draw: () => { const p = proj(SHIP_X, SHIP_Y); drawShip(p.x, p.y, p.s, g.ship, g.t, g.inShip); } });
+  if (!g.inShip) list.push({ y: g.py, draw: () => drawAstroNow(1 - .35 * g.enterT) });
+  list.sort((a, b) => a.y - b.y).forEach(item => item.draw());
+}
+function drawParticles() {
+  ctx.save();
+  for (const p of parts) {
+    let x = p.x, y = p.y, s = 1; if (!p.screen) { const q = proj(p.x, p.y); x = q.x; y = q.y; s = q.s; }
+    const size = (p.size + p.grow * p.age) * s; if (size <= 0 && p.shape !== 't') continue;
+    ctx.globalAlpha = Math.max(0, (1 - p.age / p.life) * p.alpha); ctx.globalCompositeOperation = p.add ? 'lighter' : 'source-over'; ctx.fillStyle = p.color;
+    if (p.shape === 's') { ctx.save(); ctx.translate(x, y); ctx.rotate(p.age * 3 + p.rot); starPath(size * 1.6, size * .5, 4); ctx.fill(); ctx.restore(); }
+    else if (p.shape === 't') label(p.text, x, y, 'bold 13px sans-serif', '#fff'); else circle(x, y, size);
+  }
+  ctx.restore();
+}
+function spawn(o) { if (parts.length > 420) parts.shift(); parts.push({ x: 0, y: 0, vx: 0, vy: 0, life: 1, age: 0, size: 3, grow: 0, color: '#fff', add: false, screen: false, drag: 0, shape: 'c', rot: rand(0, 6), alpha: 1, ...o }); }
+const sparkle = (x, y, color = '#fff6c0', o = {}) => spawn({ x, y, vy: -12, life: .9, size: 2.5, color, add: true, shape: 's', ...o });
+function burst(x, y, n, colors, speed, screen) { for (let i = 0; i < n; i++) { const a = rand(0, TAU), v = speed * rand(.3, 1.1); spawn({ x, y, vx: cos(a) * v, vy: sin(a) * v, life: rand(.8, 1.6), size: rand(2, 5.5), color: colors[i % colors.length], add: true, screen, drag: 1.2, shape: 's' }); } }
+function updateParts(dt) {
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; if ((p.age += dt) >= p.life) { parts.splice(i, 1); continue; }
+    if (p.drag) { const k = Math.max(0, 1 - p.drag * dt); p.vx *= k; p.vy *= k; } p.x += p.vx * dt; p.y += p.vy * dt;
+  }
+}
+function drawLaunch() {   // space fade, flying ship, and the moonlight beam
+  const sh = g.ship, a = clamp((sh.alt - 400) / 1800, 0, 1);
+  if (g.liftoff && a > 0) {
+    ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = gradient(0, 0, 0, H, 0, '#04021a', 1, '#1a0b3a'); ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#fff';
+    for (let i = 0; i < 90; i++) { const speed = .15 + (i % 5) * .12; ctx.globalAlpha = a * (.4 + .6 * Math.abs(sin(g.t * 2 + i))); ctx.fillRect((i * 97.3) % W, (i * 61.7 + sh.alt * speed) % (H + 20), 1.8, 1.8 + speed * 4); }
+    ctx.globalAlpha = a; drawMatariki(240, 96, 1.5, a, g.t, true); ctx.restore();
+  }
+  if (g.liftoff) { const p = proj(SHIP_X, sh.y); drawShip(p.x, p.y, p.s * (sh.alt < 1000 ? 1 : clamp(1 - (sh.alt - 1000) / 2800, .3, 1)), sh, g.t, true); drawParticles(); }
+  if (!g.showMoon) return; const p = proj(SHIP_X, sh.y), mx = p.x - 8, my = p.y - 230 * p.s;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; polygon(gradient(0, my, 0, p.y - 110 * p.s, 0, 'rgba(255,248,200,.5)', 1, 'rgba(255,248,200,0)'), [[mx - 10, my + 20], [mx + 10, my + 20], [mx + 46 * p.s, p.y - 110 * p.s], [mx - 46 * p.s, p.y - 110 * p.s]]);
+  ctx.globalCompositeOperation = 'source-over'; ctx.translate(mx, my); glow(70, 'rgba(255,248,200,.6)', 'rgba(255,248,200,0)', 1); drawMoonDisc(26, g.moonF);
+  label(g.moonF > .96 ? 'Rākaunui · full moon' : 'maramataka moon', 0, 46, (g.moonF > .96 ? 'bold ' : '') + '13px sans-serif', '#fff6c8'); ctx.restore();
+}
+function drawWorld(shake) {
+  ctx.save(); if (shake > .05) ctx.translate(rand(-1, 1) * shake, rand(-1, 1) * shake);
+  drawSky(g.t); ctx.save(); ctx.beginPath(); ctx.rect(-30, HORIZON - 3, W + 60, H); ctx.clip();
+  drawGround(g.t); drawObjects(); ctx.fillStyle = gradient(0, HORIZON, 0, HORIZON + 150, 0, 'rgba(255,190,150,.6)', 1, 'rgba(255,190,150,0)'); ctx.fillRect(-30, HORIZON - 3, W + 60, 153);   // horizon haze
+  ctx.restore(); ctx.restore();
+}
+function drawWin() {
+  ctx.fillStyle = gradient(0, 0, 0, H, 0, '#04021a', 1, '#2a0f3a'); ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#fff';
+  for (let i = 0; i < 100; i++) { ctx.globalAlpha = .3 + .7 * Math.abs(sin(winT * 1.5 + i)); ctx.fillRect((i * 97.3) % W, (i * 53.1) % 330, 1.8, 1.8); } ctx.globalAlpha = 1;
+  drawMatariki(380, 60, 1.2, 1, winT, true); ctx.save(); ctx.translate(100, 80); drawMoonJewel(26, 1, 1); ctx.restore();
+  ctx.save(); ctx.translate(240, 190 + sin(winT * 2) * 5); drawShip(0, 0, .55, { tilt: 0, doorOpen: 0, slot: 1, socket: 1, flame: .6 }, winT, true); ctx.restore(); drawParticles();
+}
+const hint = (text, sub = '') => $('hint').innerHTML = text ? text + (sub ? '<small>' + sub + '</small>' : '') : '';
+let capTimer;
+function caption(title, text, secs = 5) {
+  $('caption').innerHTML = '<strong>' + title + '</strong>' + text; $('caption').classList.add('show');
+  clearTimeout(capTimer); capTimer = setTimeout(() => $('caption').classList.remove('show'), secs * 1000);
+}
+const place = (el, p) => { el.style.left = p.x + 'px'; el.style.top = p.y + 'px'; };
+const jump = () => { g.jumpT = .45; g.squeak = .4; sfx.squeak(); };
+const count = text => { $('count').textContent = text; $('count').animate([{ transform: 'scale(1.3)' }, { transform: 'scale(1)' }], 300); };
+const guideTo = (x, y) => { g.guide.mode = 'scene'; g.guide.tx = x; g.guide.ty = y; };
+const guideNear = () => hypot(g.guide.x - g.guide.tx, g.guide.y - g.guide.ty) < 14;
+function shipPart(dx, dy) { const c = cos(g.ship.tilt), s = sin(g.ship.tilt); return proj(SHIP_X + dx * c - dy * s, g.ship.y + dx * s + dy * c); }   // a point on the ship, in screen coordinates
+const pause = secs => new Promise(done => {   // a wait the player can skip by tapping / pressing space
+  const t = setTimeout(finish, secs * 1000); function finish() { clearTimeout(t); skipNow = null; done(); } skipNow = finish; });
+const until = (test, max = 999) => Promise.race([new Promise(done => waits.push({ test, done })), wait(max)]);   
+
+
+async function say(who, text, secs = 1.6 + text.length * .04) {
+  g.talking = true; $('bubble').textContent = text; $('bubble').className = 'show ' + who; sfx.blip(who);
+  await pause(secs); $('bubble').className = ''; g.talking = false; await wait(.12);
+}
+async function talk(lines) { for (const [who, text, secs] of lines) await say(who, text, secs); }
+function ask(label, sub) {   
+  return new Promise(done => { const b = $('prompt'); b.innerHTML = label + (sub ? '<small>' + sub + '</small>' : ''); b.style.display = 'block'; b.onclick = () => { b.style.display = 'none'; done(); }; });
+}
+async function gift(kind, from) {  
+  const el = itemCanvas(kind, 120, 26, 1), info = ITEMS[kind], slot = $('slot' + info[2]);
+  el.className = 'item'; el.style.setProperty('--k', .2); place(el, from || proj(g.guide.x, g.guide.y)); game.append(el);
+  $('dim').classList.add('on'); await wait(.05); place(el, { x: 240, y: 330 }); el.style.setProperty('--k', 1.4); await wait(1);
+  sfx.gift(); caption(info[0], info[1], 4.6); burst(240, 330, 30, ['#fff3b0', '#9ff5d6', '#fff'], 190, true);
+  if (kind === 'koru') { g.hasKoru = true; g.fearTarget = 30; mood = 'brave'; sfx.transform(); jump(); }
+  else { if (kind === 'pounamu') g.fearTarget = 8; sfx.tink(); }
+  await pause(2.6); $('dim').classList.remove('on');
+  place(el, kind === 'jewel' ? shipPart(22, -84) : { x: 309 + info[2] * 44, y: 32 }); el.style.setProperty('--k', kind === 'jewel' ? .08 : .25); await wait(1);
+  el.remove(); slot.classList.add('on', 'pulse'); if (kind === 'jewel') g.ship.socket = 1; sfx.tink();
+}
+async function flyPounamuToDoor() {
+  const el = itemCanvas('pounamu', 120, 26, 1), a = playerScreen(); el.className = 'item'; el.style.setProperty('--k', .25); place(el, { x: a.x, y: a.y - 70 }); game.append(el);
+  await wait(.05); place(el, shipPart(0, -34)); el.style.setProperty('--k', .12); await wait(1.1); el.remove(); g.ship.slot = 1; sfx.unlock();
+}
+
+
+async function sceneIntro() {
+  await wait(.8);
+  await say('astro', 'Oops. The door shut behind me.'); jump();
+  await say('astro', "I'm locked out. On MARS."); g.ping = true; sfx.ping();
+  await say('astro', 'That star up north keeps blinking at me...');
+  hint('Walk north ↑', 'Arrow keys / WASD, or touch and hold where you want to go'); g.frozen = false;
+}
+async function sceneKoru() {
+  g.frozen = true; hint(''); const ry = g.py - 120, gd = g.guide;
+  gd.mode = 'scene'; gd.x = pathX(ry) + 40; gd.y = camY - 20; gd.a = .01; guideTo(pathX(ry) + 78, ry - 62); sfx.guide();
+  await until(guideNear, 3);
+  await say('guide', 'Kia ora, little traveller.'); jump(); g.spook = 1;
+  await talk([['astro', 'AAAH! A TALKING STAR!', 1.9], ['guide', 'Do not fear. I am a kaitiaki, a guardian of this place.', 3.4],
+    ['astro', "I'm not screaming. YOU'RE screaming.", 2.4], ['guide', 'Take one brave step toward me.', 2.4]]);
+  g.ring = { x: pathX(ry), y: ry }; g.minY = ry; hint('Take a brave step ↑'); g.frozen = false;
+  await until(() => hypot(g.px - g.ring.x, g.py - g.ring.y) < 46);
+  g.frozen = true; hint(''); burst(g.ring.x, g.ring.y, 26, ['#ffe48a', '#fff', '#9ff5d6'], 160); sfx.braveStep(); g.ring = null;
+  await say('guide', 'That was brave. This koru is a gift for you.', 3);
+  await gift('koru');
+  await talk([['astro', 'Ngā mihi! I feel... taller?', 2.4], ['guide', 'Kia kaha. Keep walking north.', 2.4]]);
+  g.minY = 1500; g.stage = 2; hint('Keep going north ↑'); g.frozen = false; gd.mode = 'follow';
+}
+async function scenePounamu() {
+  g.frozen = true; hint(''); g.minY = 1400; g.auto = { x: pathX(1430), y: 1430 }; guideTo(pathX(SITE_Y) + 70, SITE_Y - 120);
+  await until(() => !g.auto && guideNear(), 5); g.auto = null;
+  await talk([['guide', 'You made it to the north side of Mars.', 2.8], ['guide', 'No one has walked here before you.', 2.6], ['astro', 'I walked here. On my OWN legs!', 2.4]]);
+  g.matFocus = 1; sfx.ping(); caption('Matariki', 'A cluster of stars whose rising marks the Māori new year.');
+  await talk([['guide', 'Look up. Those stars are Matariki.', 3], ['astro', 'Ooh. Pretty. Hello, stars!', 2.2],
+    ['guide', 'Pounamu is a treasured taonga. It is gifted, never taken.', 3.6], ['guide', 'Will you receive it with thanks?', 2.4]]);
+  await ask('Ngā mihi', 'Thank you'); sfx.thanks(); await say('astro', 'Ngā mihi!', 1.2);
+  await gift('pounamu');
+  await talk([['guide', 'Now go home. This pounamu is your key.', 3], ['astro', 'Home! And snacks!', 1.8]]);
+  g.matFocus = 0; g.stage = 4; hint('Back to the ship ↓'); g.frozen = false; g.guide.mode = 'follow';
+}
+async function sceneDoor() {
+  const sh = g.ship; g.frozen = true; hint(''); g.maxY = 4300; g.auto = { x: 178, y: 4262 };
+  await until(() => !g.auto, 6); g.auto = null; g.face = -1;
+  await say('astro', 'The door has a slot. Pounamu-shaped!', 2.6);
+  await flyPounamuToDoor(); await wait(.5); sh.doorTarget = 1; sfx.door(); await wait(1.4);
+  await say('astro', 'It fits! I am a genius. A scared genius.', 2.8); g.fearTarget = 0;
+  guideTo(SHIP_X + 120, SHIP_Y - 175); await until(guideNear, 4);
+  await talk([['guide', 'Kia ora again. One more taonga, for when you are no longer afraid.', 3.8], ['astro', "Afraid? Me? ...Huh. I'm not.", 2.4]]);
+  g.jewelFloat = true; sfx.guide(); burst(SHIP_X + 40, SHIP_Y - 190, 18, ['#fff6c0', '#fff'], 90);
+  await talk([['guide', 'This one is made from the crust of the moon.', 3.2], ['astro', 'Ooh. Shiny. I WANT it.', 2.2], ['guide', 'Receive it with thanks.', 2]]);
+  await ask('Ngā mihi', 'Thank you'); sfx.thanks(); await say('astro', 'Ngā mihi!', 1.2);
+  const from = proj(SHIP_X + 40, SHIP_Y - 190); g.jewelFloat = false; await gift('jewel', from);
+  await talk([['astro', 'Moon power! The ship is humming.', 2.6], ['guide', 'Follow the moonlight home. Kia kaha!', 2.8]]);
+  await ask('Launch!', ''); sfx.click(); await say('astro', 'Bye, Mars. Thanks for having me!', 2.4);
+  g.noClamp = true; g.auto = { x: 130, y: 4292 }; await until(() => !g.auto, 5); g.auto = null; g.entering = true; await until(() => g.enterT >= 1, 3);
+  g.inShip = true; sh.doorTarget = 0; sfx.door(); await wait(1.3); g.showMoon = true;
+  for (const n of [3, 2, 1]) { count(n); sfx.beep(); g.moonTarget = [.8, .55, .3][n - 1]; await wait(.95); }
+  count('GO!'); g.moonTarget = 1; sfx.beep(true); sfx.launch(); g.liftoff = true; sh.flame = 1; g.shake = 3; await wait(.9); count('');
+  await until(() => sh.alt > 2900); showWin();
+}
+function showWin() { game.classList.add('intro'); state = 'win'; winT = 0; parts.length = 0; mood = 'win'; sfx.win(); $('win').classList.add('show'); }
+function run(scene, stage) { g.stage = stage; g.scene = true; scene().then(() => g.scene = false); }
+
+
+function toGame(e) { const r = game.getBoundingClientRect(), s = r.width / 480; return { x: (e.clientX - r.left) / s, y: (e.clientY - r.top) / s }; }
+function confirmKey() { if ($('prompt').style.display === 'block') $('prompt').click(); else if (skipNow) skipNow(); }
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase(); keys[k] = true; startAudio();
+  if (k === 'm') $('mute').click();
+  if (k === ' ' || k === 'enter' || k === 'e') { e.preventDefault(); state === 'title' ? startGame() : confirmKey(); }
+  if (k.startsWith('arrow')) e.preventDefault();
+});
+addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+addEventListener('blur', () => { for (const k in keys) keys[k] = false; pointer = null; });
+game.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; startAudio(); if (skipNow) skipNow(); pointer = toGame(e); });
+addEventListener('pointermove', e => { if (pointer) pointer = toGame(e); });
+addEventListener('pointerup', () => pointer = null);
+function inputDir() {
+  let x = (keys.arrowright || keys.d ? 1 : 0) - (keys.arrowleft || keys.a ? 1 : 0), y = (keys.arrowdown || keys.s ? 1 : 0) - (keys.arrowup || keys.w ? 1 : 0);
+  if (pointer && !x && !y) { const p = playerScreen(), dx = pointer.x - p.x, dy = pointer.y - (p.y - 30), d = hypot(dx, dy); if (d > 18) { x = dx / d; y = dy / d; } }   // walk toward the finger
+  const len = hypot(x, y); return len > 1 ? { x: x / len, y: y / len } : { x, y };
+}
+$('mute').onclick = function () { muted = !muted; if (master) master.gain.value = muted ? 0 : 1; this.textContent = muted ? '🔇' : '🔊'; this.blur(); };
+$('play').onclick = startGame; $('again').onclick = () => location.reload();
+function startGame() {
+  if (state !== 'title') return; startAudio(); sfx.click(); $('title').style.display = 'none'; game.classList.remove('intro'); state = 'play'; run(sceneIntro, 0);
+}
+
+
+function updatePlay(dt) {
+  const sh = g.ship, gd = g.guide, ease = Math.min(1, dt * 10); g.t += dt;
+  g.fear += (g.fearTarget - g.fear) * Math.min(1, dt * (g.fearTarget < g.fear ? 1.1 : 2)); g.brave = lerp(g.brave, g.hasKoru ? 1 : 0, Math.min(1, dt * 2.5));
+  g.spook = Math.max(0, g.spook - dt * 1.4); if (!g.liftoff) g.shake = Math.max(0, g.shake - dt * 3); g.jumpT = Math.max(0, g.jumpT - dt); g.squeak = Math.max(0, g.squeak - dt);
+
+  let dir = { x: 0, y: 0 }; const speed = lerp(105, 150, g.brave);
+  if (g.auto) { const dx = g.auto.x - g.px, dy = g.auto.y - g.py, d = hypot(dx, dy); if (d < 5) g.auto = null; else dir = { x: dx / d * .85, y: dy / d * .85 }; } else if (!g.frozen) dir = inputDir();
+  const slow = g.entering ? .8 : 1; g.vx = (g.vx + (dir.x * speed - g.vx) * ease) * slow; g.vy = (g.vy + (dir.y * speed - g.vy) * ease) * slow;
+  g.px += g.vx * dt; g.py = clamp(g.py + g.vy * dt, g.minY, g.maxY); if (!g.auto && !g.noClamp) g.px = clamp(g.px, pathX(g.py) - PATH_HALF + 8, pathX(g.py) + PATH_HALF - 8);  
+  const sp = hypot(g.vx, g.vy), sn = sin(g.wp); g.walk = lerp(g.walk, clamp(sp / speed, 0, 1), ease); g.wp += dt * sp * lerp(.1, .058, g.brave);
+  if (sp > 20 && (sn > 0) !== (g.prevSin > 0)) g.brave > .5 ? sfx.stepB() : sfx.step(); g.prevSin = sn; if (Math.abs(g.vx) > 5) g.face = g.vx > 0 ? 1 : -1;
+  if ((g.dustT -= dt) <= 0 && sp > 30 && !g.inShip) { g.dustT = .1; spawn({ x: g.px + rand(-6, 6), y: g.py + 1, vx: rand(-14, 14), vy: rand(-16, -4), life: .6, size: 2.5, grow: 7, color: 'rgba(225,160,110,.55)', alpha: .7 }); }
+  if (g.entering) g.enterT = Math.min(1, g.enterT + dt / .7);
+
+
+  if (g.liftoff) {
+    sh.vy += (120 + sh.alt * .5) * dt; sh.alt += sh.vy * dt; sh.y = SHIP_Y - sh.alt; sh.tilt *= Math.max(0, 1 - dt * 4); camY = sh.y - 420;
+    for (let i = 0; i < 3; i++) spawn({ x: SHIP_X + rand(-8, 8), y: sh.y + 6, vx: rand(-25, 25), vy: rand(120, 260), life: .6, size: rand(4, 9), grow: -6, color: Math.random() < .5 ? '#ffb347' : '#fff1a8', add: true });
+  } else camY += (g.py - 520 - camY) * Math.min(1, dt * 6);
+  sh.doorOpen += (sh.doorTarget - sh.doorOpen) * Math.min(1, dt * 3); if (g.moonTarget) g.moonF += (g.moonTarget - g.moonF) * Math.min(1, dt * 3);
+  g.north = Math.max(g.north, clamp((3300 - g.py) / 1500, 0, 1));
+  if ((sh.smokeT -= dt) <= 0 && !g.liftoff) { sh.smokeT = .28; spawn({ x: SHIP_X - 10 + rand(-3, 3), y: SHIP_Y - 150, vx: rand(-6, 6), vy: -26, life: 2.4, size: 4, grow: 7, color: 'rgba(80,70,80,.5)', alpha: .55 }); }
+
+
+  if (gd.mode === 'follow') { gd.tx = g.px + 72; gd.ty = g.py - 84 + sin(g.t * 2) * 6; }
+  gd.x += (gd.tx - gd.x) * Math.min(1, dt * 2.5); gd.y += (gd.ty - gd.y) * Math.min(1, dt * 2.5); gd.a += ((gd.mode === 'hidden' ? 0 : 1) - gd.a) * Math.min(1, dt * 3);
+  if (gd.mode !== 'hidden' && Math.random() < dt * 14) sparkle(gd.x + rand(-14, 14), gd.y + rand(-10, 14), Math.random() < .5 ? '#fff2a8' : '#9ff5d6', { vx: rand(-10, 10), vy: rand(5, 25), size: rand(1.5, 3.2) });
+  if (g.jewelFloat && Math.random() < .3) sparkle(SHIP_X + 40 + rand(-14, 14), SHIP_Y - 190 + rand(-14, 14), '#fff6c0', { vy: -10, size: 2.4 });
+  if (g.brave > .8 && Math.random() < dt * 2) sparkle(g.px + rand(-12, 12), g.py - 40 + rand(-8, 8), '#fff4c8', { vy: -14 });
+
+
+  if (!g.hasKoru && !g.frozen && !g.scene && g.stage === 0) {
+    if ((g.spookT -= dt) <= 0) { g.spookT = rand(14, 22); g.spook = .8; jump(); sfx.spook(); g.meteor = { x: W + 20, y: rand(20, 60), t: 0 }; if (!g.talking) say('astro', ['EEP!', 'What was THAT?', 'Not the sky too!'][Math.floor(rand(0, 3))], 1.8); }
+    if ((g.squeakT -= dt) <= 0) { g.squeakT = rand(5, 9); sfx.squeak(); g.squeak = .3; spawn({ x: g.px + 22, y: g.py - 70, vy: -26, life: 1.1, size: 1, shape: 't', text: 'eep!' }); }
+  }
+  if (g.meteor) { g.meteor.t += dt; g.meteor.x -= 520 * dt; g.meteor.y += 110 * dt; if (g.meteor.t > 1.1) g.meteor = null; }
+
+  if (!g.scene) {
+    if (g.stage === 0 && g.py <= g.minY + 2) run(sceneKoru, 1);
+    else if (g.stage === 2 && g.py <= 1502) run(scenePounamu, 3);
+    else if (g.stage === 4 && g.py >= 4195) run(sceneDoor, 5);
+    else if (!g.frozen && !g.talking) {
+      const allowed = w => w === 's' ? !g.hasKoru : w === 'b' ? g.hasKoru && !g.hasPou : g.hasPou;
+      const q = QUIPS.find(q => !quipsDone.has(q) && Math.abs(g.py - q[0]) < 26 && allowed(q[1]));
+      if (q) { quipsDone.add(q); say('astro', q[2], 2.8); if (q[1] === 's') { sfx.squeak(); g.squeak = .3; } }
+    }
+  }
+  for (const c of critters) {
+    const d = hypot(g.px - c.x, g.py - c.y), old = c.peek; c.peek += ((d < 190 && d > 80 ? 1 : 0) - c.peek) * Math.min(1, dt * 5);
+    if (old < .5 && c.peek >= .5) sfx.pip();
+    if (!c.said && c.peek > .75 && !g.scene && !g.talking && !g.frozen) { c.said = true; say('astro', g.hasKoru ? 'Hello, little blob! I am brave now.' : 'Something just blinked at me!', 2.5); if (!g.hasKoru) { sfx.squeak(); g.squeak = .3; } }
+  }
+  waits = waits.filter(w => w.test() ? (w.done(), false) : true);   // is any "wait until..." finished?
+  updateParts(dt); updateHud();
+}
+function updateHud() {
+  const f = clamp(g.fear / 100, 0, 1);
+  $('fearbar').style.width = Math.max(8, 208 * f) + 'px'; $('fearbar').style.background = `hsl(${Math.round((1 - f) * 140)},85%,55%)`;
+  $('mood').textContent = g.fear > 70 ? 'So scared!' : g.fear > 35 ? 'Nervous' : g.fear > 12 ? 'Getting braver' : 'Brave!';
+  game.classList.toggle('scared', g.fear > 55 && g.brave < .5);
+  if (g.talking) {   
+    const guideTalks = $('bubble').classList.contains('guide'), p = guideTalks ? proj(g.guide.x, g.guide.y) : playerScreen(), ay = guideTalks ? p.y - 44 : p.y - 112 * p.s;
+    place($('bubble'), { x: clamp(p.x, 125, 355), y: Math.max(ay - 14, 90) });
+  }
+}
+function update(dt) {
+  if (state === 'play') updatePlay(dt);
+  else if (state === 'title') { titleT += dt; g.t += dt; if (Math.random() < dt * 3) sparkle(rand(40, 440), rand(120, 400), '#fff2c0', { screen: true, vy: -8, life: 1.4, size: 2 }); updateParts(dt); }
+  else { winT += dt; if (Math.random() < dt * 14) sparkle(rand(10, 470), rand(60, 330), ['#fff2a8', '#9ff5d6', '#ffd0a0', '#fff'][Math.floor(rand(0, 4))], { screen: true, vx: rand(-12, 12), vy: rand(-10, 30), life: 1.6, size: rand(2, 5) }); updateParts(dt); }
+}
+
+
+function render() {
+  ctx.setTransform(2, 0, 0, 2, 0, 0); ctx.clearRect(0, 0, W, H); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  if (state === 'win') return drawWin();
+  const shake = Math.max(g.spook * 7, g.fear > 55 && g.brave < .5 ? (g.fear - 55) / 45 * 1.4 : 0, g.shake);
+  drawWorld(shake); const gd = g.guide;
+  if (state === 'title') drawGuide(372, 168, 1, titleT);
+  else if (gd.a > .02) { const p = proj(gd.x, gd.y); drawGuide(p.x, p.y, gd.a, g.t); }
+  if (g.jewelFloat) { const p = proj(SHIP_X + 40, SHIP_Y - 190); ctx.save(); ctx.translate(p.x, p.y + sin(g.t * 2) * 4); drawMoonJewel(13, .6, 1); ctx.restore(); }
+  drawParticles(); drawLaunch();
+}
+function frame(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; update(dt); render(); requestAnimationFrame(frame); }
+let last = performance.now();
+function fit() { game.style.setProperty('--s', Math.min(innerWidth / 480, innerHeight / 720)); }
+addEventListener('resize', fit); fit();
+camY = g.py - 520; ['koru', 'pounamu', 'jewel'].forEach((kind, i) => {   
+  const slot = document.createElement('div'); slot.className = 'slot'; slot.id = 'slot' + i; slot.style.left = 291 + i * 44 + 'px'; slot.append(itemCanvas(kind, 36, 9, 0)); game.append(slot);
+  const names = [['Koru', 'New life, growth and peace.'], ['Pounamu', 'A treasured taonga, traditionally gifted.'], ['Maramataka', 'The Māori lunar calendar, turinh of the moon.']];
+  const row = document.createElement('div'); row.className = 'row'; row.style.top = 10 + i * 56 + 'px'; row.append(itemCanvas(kind, 44, 14, .5)); row.insertAdjacentHTML('beforeend', `<h3>${names[i][0]}</h3><p>${names[i][1]}</p>`); $('panel').append(row);
+});
+$('panel').insertAdjacentHTML('beforeend', '<div class="row" style="top:178px"><i class="star"></i><h3>Matariki</h3><p>Stars that mark the our ansestors.</p></div>');
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
